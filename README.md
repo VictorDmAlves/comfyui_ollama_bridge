@@ -46,6 +46,8 @@ ComfyUI/
 4. The default URL is `http://localhost:11434`. Click **Refresh Models** to update the dropdown after new models are downloaded.
 5. Connect **Response** to any ComfyUI input accepting `STRING` (such as a text-display node or a string-capable CLIP text-encode input).
 
+There is a [Workflow](./workflow/) avaible in this repository (Require `rgthree` and `WAS Suite` custom_nodes).
+
 ## Text-to-text
 ```
 Ollama Chat (Local)  -- Response (STRING) --> text display / CLIP Text Encode
@@ -91,6 +93,61 @@ The main view shows URL, model, prompt, seed, temperature, Max Tokens, and Cache
 | Timeout Seconds | Wait time for model generation; default 300 seconds. |
 | Cache Mode | Cache identical inputs or call Ollama every time a queued workflow executes this node. |
 | images | Optional ComfyUI `IMAGE` input, with batch/list support. |
+
+## Understanding Prompt vs. System Prompt
+The Ollama Chat (Local) node provides two separate text fields: Prompt and System Prompt. Although both send instructions to the AI model, they serve different purposes.
+
+### System prompt (Defines the Model's Behavior)
+The System Prompt establishes the model's role, behavior, response style, and general instructions.
+
+Think of it as a set of persistent guidelines that the model should follow whenever the node executes.
+
+It is especially useful for:
+- Defining the model's expertise or role.
+- Specifying the desired language, tone, and output format.
+- Establishing rules and restrictions for generated responses.
+- Maintaining consistent behavior across different requests.
+- Instructing the model to return only the final result, without explanations or additional commentary.
+
+Example — System Prompt:
+- You are an expert image analyst specializing in photorealistic image generation. Analyze visual content accurately, paying close attention to subjects, composition, lighting, textures, and environmental details. Generate detailed, natural-language image prompts in English. Output only the final prompt without explanations, introductions, or additional commentary.
+
+This instruction establishes how the model should behave, regardless of which image or text is provided.
+
+### Prompt (Defines the Current Task)
+The Prompt contains the actual request sent to the model during execution.
+
+It tells the model what to do with the supplied text, attached images, or other available context.
+
+It is typically used for:
+- Asking questions or requesting specific information.
+- Providing text to rewrite, improve, summarize, or translate.
+- Requesting an analysis of an attached image.
+- Generating descriptions, captions, or creative content.
+- Giving task-specific instructions that may change between executions.
+
+Example — Prompt (with an attached image):
+- Analyze the attached image and generate a detailed, visually accurate prompt suitable for MOSS Image. Preserve the original composition, subjects, lighting, colors, and distinctive visual characteristics.
+
+Example — Prompt (text only):
+- Improve the following image generation prompt by adding realistic photographic details, natural lighting, and precise visual descriptions while preserving the original concept: A woman standing in a garden during sunset.
+
+### How they work together
+When both fields are provided, Ollama sends them as different message roles to the selected model:
+1. System Prompt: Establishes the general instructions and expected behavior.
+2. Prompt: Provides the specific task or content to process.
+3. Images (optional): Supply visual information for compatible vision-language models.
+
+The model generates a response based on these inputs, generally following the System Prompt's instructions while completing the task described in the Prompt.
+
+Important Notes:
+- The System Prompt is optional. For simple tasks, using only the Prompt is often sufficient.
+- The Prompt can be left empty, but providing an explicit request is recommended, especially when working with images.
+- A well-defined System Prompt helps produce more consistent results across different inputs.
+- You can reuse the same System Prompt while changing the Prompt for each execution.
+- Actual instruction-following behavior depends on the selected Ollama model. Some models may not consistently follow every instruction.
+
+In short: Use the System Prompt to tell the AI how to behave, and the Prompt to tell it what to do.
 
 ## Speed tips
 - **Cache Identical Inputs** is the default, so unchanged workflows do not repeat costly Ollama calls. Use **Always Run** if you want a new response each time you queue a graph.
