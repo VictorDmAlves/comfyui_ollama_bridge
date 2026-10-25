@@ -46,7 +46,7 @@ ComfyUI/
 4. The default URL is `http://localhost:11434`. Click **Refresh Models** to update the dropdown after new models are downloaded.
 5. Connect **Response** to any ComfyUI input accepting `STRING` (such as a text-display node or a string-capable CLIP text-encode input).
 
-There is a [Workflow](./workflow/) avaible in this repository (Require `rgthree` and `WAS Suite` custom_nodes).
+There is a [Workflow](./workflow/) avaible in this repository.
 
 ## Text-to-text
 ```
