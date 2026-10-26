@@ -31,12 +31,16 @@ Correct:
 ComfyUI/
 └── custom_nodes/
     └── comfyui-ollama-bridge/
-        ├── __init__.py
-		├── node.py
-		├── ollama.py
         ├── __pycache__/
-		├── tests/
-		└── web/
+        ├── images/
+        ├── tests/
+        ├── web/
+        ├── workflow/
+        ├── __init__.py
+        ├── LICENSE
+        ├── node.py
+        ├── ollama.py
+        └── README.md
 ```
 
 ## Utilization
