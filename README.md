@@ -10,6 +10,12 @@ A lightweight, **one-node** ComfyUI extension that sends prompts and optional im
 
 No API keys, cloud account, or extra Python packages are required beyond the dependencies already used by a standard ComfyUI installation (`aiohttp`, `Pillow`, and PyTorch).
 
+## Latest release
+### 1.1
+Update
+- README
+- A Workflow has been included as an example; no additional custom_nodes are required
+
 ## Installation
 
 ### Git
@@ -179,9 +185,6 @@ For Ollama running on a *trusted* different host, set `OLLAMA_BRIDGE_ALLOW_REMOT
 - `__init__.py`: ComfyUI registration and safe route for fresh dropdown options.
 - `web/ollama_bridge.js`: refresh button, dynamic model choices, node coloring.
 - `tests/`: HTTP and image tests using only the standard library and ComfyUI dependencies.
-
-## Contributing
-If you encounter a bug or have an idea for improvement, feel free to open a GitHub Issue with relevant details, logs, and steps to reproduce the problem.
 
 ## Acknowledgements
 This project utilizes Ollama, an open-source platform that enables running large language models and vision-language models locally.
