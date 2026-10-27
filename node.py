@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from .ollama import (
-    DEFAULT_URL, OllamaBridgeError, chat, encode_images, get_models,
+    DEFAULT_URL, OllamaBridgeError, chat, encode_images, get_cached_models,
 )
 
 
@@ -18,17 +18,14 @@ class OllamaChat:
     DESCRIPTION = (
         "Run a local Ollama model with a text prompt and optional image batch/list. "
         "Connect Response to any STRING-compatible node. "
-        "Use Refresh Models after downloading a new model."
+        "Use Edit > Ollama: Refresh Models after downloading a new model."
     )
 
     @classmethod
     def INPUT_TYPES(cls):
-        # A static dropdown at startup plus a frontend Refresh Models button.
-        # The frontend can update the list without restarting ComfyUI.
-        try:
-            models = get_models(DEFAULT_URL)
-        except OllamaBridgeError:
-            models = []
+        # Read only the cached snapshot. Refresh Node Definitions (R) must
+        # NEVER make HTTP requests to Ollama or wait for a model server.
+        models = get_cached_models(DEFAULT_URL)
         return {
             "required": {
                 "ollama_url": ("STRING", {
@@ -36,7 +33,7 @@ class OllamaChat:
                     "tooltip": "Address of the Ollama service as seen by the ComfyUI backend.",
                 }),
                 "model": (models or ["Click Refresh Models"], {
-                    "tooltip": "Locally downloaded Ollama model. Click Refresh Models to reload.",
+                    "tooltip": "Locally downloaded Ollama model. Refresh via ComfyUI Edit > Ollama: Refresh Models.",
                 }),
                 "prompt": ("STRING", {
                     "default": "",
@@ -122,8 +119,8 @@ class OllamaChat:
         if isinstance(model, str) and model.strip() and model.strip() != "Click Refresh Models":
             return True
         return (
-            "No Ollama model selected. Run 'ollama list' in a terminal, "
-            "check the Ollama URL, then click Refresh Models and select a model."
+            "No Ollama model selected. Run 'ollama list', check the Ollama URL, "
+            "then use Edit > Ollama: Refresh Models and select a model."
         )
 
     @classmethod

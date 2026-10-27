@@ -1,4 +1,4 @@
-"""ComfyUI Ollama Bridge: one chat node with a model refresh button."""
+"""ComfyUI Ollama Bridge: single chat node, menu-based model refresh."""
 
 import asyncio
 
@@ -9,6 +9,14 @@ from .node import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
 from .ollama import DEFAULT_URL, OllamaBridgeError, get_models
 
 WEB_DIRECTORY = "./web"
+
+# Prime the default model dropdown ONCE during plugin import, not inside
+# INPUT_TYPES(). Thus ComfyUI's R / Refresh Node Definitions is network-free.
+# Ollama may be unavailable at startup; Edit > Ollama: Refresh Models retries.
+try:
+    get_models(DEFAULT_URL)
+except OllamaBridgeError:
+    print("[Ollama Bridge] Startup model scan unavailable; use Edit > Ollama: Refresh Models.")
 
 
 @PromptServer.instance.routes.get("/ollama_bridge/models")

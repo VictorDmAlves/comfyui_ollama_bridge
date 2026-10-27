@@ -181,6 +181,21 @@ class BridgeTests(unittest.TestCase):
             != OllamaChat.IS_CHANGED(cache_mode=["Always Run"], **supplied)
         )
 
+    def test_refresh_node_definitions_is_network_free(self):
+        # The ComfyUI R command invokes INPUT_TYPES(). No Ollama HTTP
+        # request may run from that path, even if Ollama is unavailable.
+        ollama._model_cache.clear()
+        with patch.object(ollama, '_request_json', side_effect=AssertionError('Unexpected HTTP request')):
+            for _ in range(30):
+                options = OllamaChat.INPUT_TYPES()['required']['model'][0]
+                self.assertEqual(options, ['Click Refresh Models'])
+        ollama.get_models(self.base, force=True)
+        with patch.object(ollama, '_request_json', side_effect=AssertionError('Unexpected HTTP request')):
+            for _ in range(30):
+                # Snapshot is for default URL, not this test server; still no network.
+                OllamaChat.INPUT_TYPES()
+                self.assertEqual(ollama.get_cached_models(self.base), ['plain:latest', 'vision:latest'])
+
     def test_node_integration(self):
         kwargs = {
             "ollama_url": [self.base], "model": ["vision:latest"],

@@ -98,6 +98,14 @@ def _request_json(url: str, *, payload: dict | None = None, timeout: float = 15)
     return parsed
 
 
+def get_cached_models(raw_url: str = DEFAULT_URL) -> list[str]:
+    """Fast, network-free snapshot for INPUT_TYPES and ComfyUI's R action."""
+    base = normalize_url(raw_url)
+    with _cache_lock:
+        cached = _model_cache.get(base)
+        return list(cached[1]) if cached else []
+
+
 def get_models(raw_url: str, *, force: bool = False) -> list[str]:
     base = normalize_url(raw_url)
     with _cache_lock:

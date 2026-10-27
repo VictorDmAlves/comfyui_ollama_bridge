@@ -11,10 +11,17 @@ A lightweight, **one-node** ComfyUI extension that sends prompts and optional im
 No API keys, cloud account, or extra Python packages are required beyond the dependencies already used by a standard ComfyUI installation (`aiohttp`, `Pillow`, and PyTorch).
 
 ## Latest release
-### 1.1
+### 1.2
+Added
+- Added `Ollama: Refresh Models` to the ComfyUI Edit menu, allowing users to manually update the list of available Ollama models
+- Available models are cached to avoid repeated requests to the Ollama server
+
 Update
-- README
-- A Workflow has been included as an example; no additional custom_nodes are required
+- Updated the README with instructions for the new refresh functionality
+- Prevented unnecessary Ollama API requests when refreshing ComfyUI node definitions (R key)
+- Removed the internal Refresh Models button, keeping the node simple and organized
+- Improved compatibility with existing workflows, preserving node settings and preventing widget value misalignment
+- Removed unnecessary Python cache files (__pycache__) from the distribution
 
 ## Installation
 
@@ -37,7 +44,6 @@ Correct:
 ComfyUI/
 └── custom_nodes/
     └── comfyui-ollama-bridge/
-        ├── __pycache__/
         ├── images/
         ├── tests/
         ├── web/
@@ -53,10 +59,22 @@ ComfyUI/
 1. Make sure [Ollama](https://ollama.com/) is installed and running on the computer running the **ComfyUI backend**.
 2. Download a model, for example `ollama pull gemma3:4b` (choose a model that supports images if you want vision input).
 3. Add **Ollama > Local LLM > Ollama Chat (Local)** node.
-4. The default URL is `http://localhost:11434`. Click **Refresh Models** to update the dropdown after new models are downloaded.
+4. The default URL is `http://localhost:11434`. Installed models are detected once when the plugin starts. To update the list after downloading or removing a model, use **ComfyUI menu > Edit > Ollama: Refresh Models**. There is **no Refresh Models button inside the node**.
 5. Connect **Response** to any ComfyUI input accepting `STRING` (such as a text-display node or a string-capable CLIP text-encode input).
 
 There is a [Workflow](./workflow/) avaible in this repository.
+
+## Refreshing Ollama models (new)
+To update the model dropdown **without restarting ComfyUI**:
+
+1. Start Ollama and download your models (for example, `ollama pull gemma3:4b`).
+2. Open the ComfyUI menu at the upper left, choose **Edit**.
+3. Click **Ollama: Refresh Models** (the new entry below the other Edit commands).
+4. The dropdowns in existing **Ollama Chat (Local)** nodes are updated; newly created nodes will also use the refreshed default list.
+
+**Important:** The ComfyUI **R** shortcut / **Refresh Node Definitions** does **not** contact Ollama. It only reads the last cached model list, so it will not wait for Ollama responses. Model discovery occurs once at plugin startup and subsequently **only through the Edit-menu command**. The node itself has no refresh button.
+
+The Edit command checks the default Ollama server and any additional Ollama URLs already configured in open Ollama nodes. It preserves the currently selected model in existing workflows, even if that model is absent from the new list.
 
 ## Text-to-text
 ```
@@ -87,7 +105,7 @@ The main view shows URL, model, prompt, seed, temperature, Max Tokens, and Cache
 |---|---|
 | Ollama URL | `http://localhost:11434` by default; address is resolved on the ComfyUI backend machine. |
 | Model | Dropdown of installed Ollama models. |
-| Refresh Models | Update model choices immediately; no ComfyUI restart required. |
+| Refresh Models | Use **Edit > Ollama: Refresh Models** to reload installed models for all open Ollama nodes; no ComfyUI restart required. |
 | Prompt | The user message sent to Ollama. |
 | Seed | Sent as Ollama `options.seed`. Supports ComfyUI's built-in `control_after_generate` modes: fixed, increment, decrement, randomize. |
 | Temperature | Sampling randomness. |
@@ -167,12 +185,13 @@ In short: Use the System Prompt to tell the AI how to behave, and the Prompt to 
 - Setting a seed increases repeatability but does not guarantee bit-for-bit identical output across Ollama/model/hardware versions.
 
 ## Troubleshooting
-- **Refresh Models fails**: Check `ollama list`, make sure Ollama is running and available at the given URL, and look in the browser developer console for the error.
-- **Model not found**: Run `ollama pull MODEL_NAME`, then click Refresh Models.
+- **Edit > Ollama: Refresh Models fails**: Check `ollama list`, make sure Ollama is running and available at the configured URL, and check the notification/browser developer console for details.
+- **Model not found**: Run `ollama pull MODEL_NAME`, then choose **Edit > Ollama: Refresh Models**.
 - **Model cannot process images**: Choose a vision-capable model. The node does not convert text-only models to vision models.
 - **Output looks unchanged**: Set Cache Mode to **Always Run**, vary the seed, or modify the prompt. ComfyUI caches unchanged inputs.
 - **ComfyUI in Docker/WSL**: `localhost` refers to the ComfyUI backend/container, not necessarily your Windows host. To access Ollama on a different trusted host, configure its network listener carefully and set `OLLAMA_BRIDGE_ALLOW_REMOTE=1` in the ComfyUI backend environment. This is opt-in for security; it must be configured **before** starting ComfyUI.
-- **The Refresh Models button doesn't appear**: Update ComfyUI/frontend, ensure the `web/` directory is installed, and hard-reload the page.
+- **The Edit-menu refresh command doesn't appear**: Ensure the `web/` directory is installed, restart ComfyUI, and hard-reload the browser (`Ctrl+F5`). There is intentionally no button in the node.
+- **The model selector is empty or says `Click Refresh Models`**: Start Ollama and use **Edit > Ollama: Refresh Models** to load the models without restarting ComfyUI.
 
 ## Network safety
 This extension communicates directly from the **ComfyUI Python backend** to Ollama using `/api/tags` and `/api/chat`. By default, it permits only `localhost`, `127.0.0.1`, and `::1`, and blocks HTTP redirects. This prevents the refresh endpoint from becoming a general-purpose server-side URL fetcher.
@@ -181,10 +200,10 @@ For Ollama running on a *trusted* different host, set `OLLAMA_BRIDGE_ALLOW_REMOT
 
 ## Architecture
 - `node.py`: one ComfyUI custom node using the compatible V1 node interface.
-- `ollama.py`: local HTTP client, small model-list cache, image conversion/encoding.
-- `__init__.py`: ComfyUI registration and safe route for fresh dropdown options.
-- `web/ollama_bridge.js`: refresh button, dynamic model choices, node coloring.
-- `tests/`: HTTP and image tests using only the standard library and ComfyUI dependencies.
+- `ollama.py`: local HTTP client, model-list cache and network-free cache snapshot, image conversion/encoding.
+- `__init__.py`: ComfyUI registration, one-time startup scan, and safe route for manual model updates.
+- `web/ollama_bridge.js`: **Edit > Ollama: Refresh Models** command, dynamic model choices, migration of older workflow widget values, node coloring.
+- `tests/`: Python backend, image, HTTP, cache, and JavaScript frontend tests.
 
 ## Acknowledgements
 This project utilizes Ollama, an open-source platform that enables running large language models and vision-language models locally.
